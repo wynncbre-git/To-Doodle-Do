@@ -1,0 +1,58 @@
+name: Build prebake.json
+
+on:
+  schedule:
+    # 06:00 + 16:00 JST  =  21:00 + 07:00 UTC
+    # GitHub Actions cron is in UTC. Fires up to ~5 min late — that's fine.
+    - cron: "0 21 * * *"
+    - cron: "0 7 * * *"
+  workflow_dispatch:        # manual trigger from the Actions tab
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_prebake.py"
+      - ".github/workflows/prebake.yml"
+
+permissions:
+  contents: write           # needed to push to gh-pages
+
+concurrency:
+  group: prebake-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build prebake into dist/
+        run: |
+          mkdir -p dist
+          cd dist
+          python ../scripts/build_prebake.py
+          cp ../scripts/index.html . 2>/dev/null || true
+
+      - name: Show prebake summary
+        run: |
+          echo "=== prebake.json size ==="
+          wc -c dist/prebake.json
+          echo "=== top-level keys ==="
+          python -c "import json; d=json.load(open('dist/prebake.json')); print({k: ('ok' if d.get(k) else 'missing') for k in ['jma','bbc','github','fx','jr']})"
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          publish_branch: gh-pages
+          keep_files: false
+          commit_message: "prebake refresh ${{ github.run_id }}"
