@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>To Doodle Do — Prebake</title>
+<style>
+  body{font-family:ui-sans-serif,system-ui,sans-serif;background:#0f1115;color:#e6e8ea;padding:40px;max-width:720px;margin:0 auto;line-height:1.5}
+  h1{font-size:20px;margin:0 0 8px}
+  p{color:#9ca3af;font-size:14px}
+  code{background:#1f2937;padding:2px 6px;border-radius:4px;font-size:13px;color:#fbbf24}
+  a{color:#60a5fa}
+  .card{background:#111827;border:1px solid #1f2937;border-radius:8px;padding:16px;margin:16px 0}
+  .ts{font-variant-numeric:tabular-nums;font-size:12px;color:#6b7280}
+</style>
+</head>
+<body>
+<h1>To Doodle Do — Prebake</h1>
+<p>Public data feed for Joe's Cowork dashboard. Refreshed twice daily by GitHub Actions.</p>
+
+<div class="card">
+  <div><strong>Endpoint:</strong> <code>./prebake.json</code></div>
+  <div class="ts" id="ts">loading…</div>
+  <p style="margin-top:12px"><a href="./prebake.json">Open the JSON →</a></p>
+</div>
+
+<p style="font-size:12px;color:#6b7280">Data sources: JMA · BBC World News RSS · GitHub Search API · Frankfurter FX · JR East delays. All public APIs, no auth.</p>
+
+<script>
+fetch('./prebake.json').then(r => r.json()).then(d => {
+  const built = d.builtAtIso || new Date(d.builtAt || 0).toISOString();
+  const feeds = ['jma','bbc','github','fx','jr'].map(k => k + (d[k] ? ' ✓' : ' ✗')).join(' · ');
+  document.getElementById('ts').textContent = `built ${built}  ·  ${feeds}`;
+}).catch(e => {
+  document.getElementById('ts').textContent = 'failed to load: ' + e.message;
+});
+</script>
+</body>
+</html>
